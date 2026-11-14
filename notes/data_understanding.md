@@ -1,10 +1,5 @@
 # Data Understanding: M5 Forecasting (Walmart)
 
-Phase 2 notes for the Inventory Policy Engine.
-Source: Kaggle, "M5 Forecasting - Accuracy". Files are stored in `data/raw/` and are not committed to Git.
-
-Items marked **VERIFY** are filled from the M5 documentation and must be confirmed against the actual files before the case study uses them.
-
 ---
 
 ## 1. Files: which we use and why
@@ -17,7 +12,6 @@ Items marked **VERIFY** are filled from the M5 documentation and must be confirm
 | `sales_train_validation.csv` | No | Same data as the evaluation file but stops at d_1913; using both would duplicate data |
 | `sample_submission.csv` | No | Kaggle submission format only; irrelevant to a business project |
 
-Note: the Kaggle goal (predict the next 28 days) is not our goal. We use the data to make inventory decisions.
 
 ## 2. Shapes (rows x columns)
 
@@ -119,7 +113,3 @@ prices
 
    Consequence: costs and lead times must be assumed and listed in `notes/assumptions.md`. Backtest results are hypothetical, not measured savings.
 8. Why 1941 day columns are a problem: dates live in column names, so grouping by date, joining the calendar, or plotting a time series is awkward. Reshape from wide to long: 30,490 x 1941 gives about 59.2 million rows, so this must be done in chunks or in a database and stored efficiently.
-
-## 8. Data quality observations
-
-TODO: add anything unexpected found while exploring (for example, how many items have no price rows early in the history, and the zero share from question 6).
