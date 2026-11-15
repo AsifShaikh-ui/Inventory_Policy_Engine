@@ -1,5 +1,4 @@
 # Data Understanding: M5 Forecasting (Walmart)
-
 ---
 
 ## 1. Files: which we use and why
@@ -98,7 +97,7 @@ prices
 3. Number of items: 3049 (check: 3049 items x 10 stores = 30,490 rows, which matches the sales file)
 4. Number of departments: 7. Number of categories: 3
 5. Days of history: 1941 days of sales (d_1 to d_1941). The calendar has 1969 days because it also covers the 28 days after the sales end (the Kaggle forecast period). Those 28 days have no sales data and are excluded from our analysis.
-6. Share of zero-sales cells: **TODO, measure it** (count zeros across the 1941 day columns divided by 30,490 x 1941 cells). Expect a large share. Two reasons a zero occurs:
+6. Share of zero-sales cells: **68.00%** (40,241,819 zeros out of 59,181,090 cells, measured across the 1941 day columns of `sales_train_evaluation.csv`). Two reasons a zero occurs:
    - **No demand:** nobody wanted the item that day. A true zero.
    - **Stockout or item not yet available:** demand may have existed but could not be served. These zeros hide lost sales.
    The data cannot tell the two apart. This is a key limitation: observed sales are not the same as true demand.
@@ -113,3 +112,13 @@ prices
 
    Consequence: costs and lead times must be assumed and listed in `notes/assumptions.md`. Backtest results are hypothetical, not measured savings.
 8. Why 1941 day columns are a problem: dates live in column names, so grouping by date, joining the calendar, or plotting a time series is awkward. Reshape from wide to long: 30,490 x 1941 gives about 59.2 million rows, so this must be done in chunks or in a database and stored efficiently.
+
+## 8. Data quality observations
+
+- **Demand is intermittent.** 68.00% of item-store-days have zero sales, so most days have no sale and sales arrive in occasional bursts.
+- **Implications for the method (to be handled in Phase 5):**
+  - Forecasting methods that assume a steady flow of demand fit this data poorly; intermittent-demand methods need to be considered.
+  - Safety stock formulas that assume normally distributed demand may misbehave on zero-heavy demand, so the choice must be made deliberately and explained.
+  - A forecast of "average daily sales" alone is not enough for an ordering decision, because the average hides how lumpy the demand is.
+- **The 68% is an average across all items.** The spread between items is not yet measured. Open check: compute the zero share per item and record the minimum, median, and maximum.
+- **Open check:** how many items have no price rows early in their history (see the missing-row note in section 5).
