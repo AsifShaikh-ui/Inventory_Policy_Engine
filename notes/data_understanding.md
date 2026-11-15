@@ -71,7 +71,7 @@
   - `event_name_2` and `event_type_2`: 1964 nulls each (so only 5 days have a second event).
   - A null here means "no event that day". It is not missing data. Plan: fill with an explicit label later.
 - **sales_train_evaluation, sell_prices:** no nulls.
-- **No nulls does not mean no gaps.** `sell_prices` has a row only for weeks in which the item was priced at that store. A missing item/store/week row most likely means the item was not on sale in that store that week (for example, not yet launched). VERIFY by checking one item's first week of prices against its first week of sales.
+- **No nulls does not mean no gaps.** `sell_prices` has a row only for weeks in which the item was priced at that store. A missing item/store/week row most likely means the item was not on sale in that store that week (for example, not yet launched). Measured: 19,558 of 30,490 item-store series (64.1%) have no price row in the first week of the data (wm_yr_wk 11101). VERIFY still open: compare an item's first price week with its first week of non-zero sales to confirm the two match.
 
 ## 6. Join chain
 
@@ -121,4 +121,9 @@ prices
   - Safety stock formulas that assume normally distributed demand may misbehave on zero-heavy demand, so the choice must be made deliberately and explained.
   - A forecast of "average daily sales" alone is not enough for an ordering decision, because the average hides how lumpy the demand is.
 - **The 68% is an average across all items.** The spread between items is not yet measured. Open check: compute the zero share per item and record the minimum, median, and maximum.
-- **Open check:** how many items have no price rows early in their history (see the missing-row note in section 5).
+- **Many items start late.** Items without a price row in the first week of the data:
+  - 19,558 of 30,490 item-store series (64.1%)
+  - 2,718 of 3,049 items (89.1%) in at least one store
+  - 1,592 of 3,049 items (52.2%) in all 10 stores, meaning they appear chain-wide only after the first week
+  - So about 1,126 items (2,718 - 1,592) start at different times in different stores.
+- **Implication:** zeros before an item's first price week are not demand zeros; the item was most likely not on sale. These "not yet available" zeros must be separated from real zero-demand days before forecasting, or the 68% figure and any demand model will be distorted. Assumption to confirm: first price week matches first non-zero sale.
