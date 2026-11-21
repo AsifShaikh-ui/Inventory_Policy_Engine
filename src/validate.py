@@ -1,3 +1,5 @@
+# This file is made for checking the extended files have any nulls
+
 import pandas as pd
 import config
 

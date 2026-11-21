@@ -1,8 +1,10 @@
+# This file is made for the convert raw cvs to long parquet
+
 import pandas as pd
 import config
 
 def build_sales_long(sales : pd.DataFrame) -> None:
-    # reshape wide sales to ling , one store at a time 
+    # reshape wide sales to long , one store at a time 
     out_dir = config.INTERIM_DIR / "sales_long"
     out_dir.mkdir(parents=True, exist_ok=True)
 

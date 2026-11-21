@@ -1,3 +1,5 @@
+# This file is made for the paths, constants, assumption values
+
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent

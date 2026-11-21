@@ -1,3 +1,5 @@
+# This file is made for checking the first price day and if stock is sold before the first price day
+
 import pandas as pd
 import config
 
