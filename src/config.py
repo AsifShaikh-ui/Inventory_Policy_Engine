@@ -18,3 +18,8 @@ EXPECTED_SALES_ROWS = N_SERIES * N_DAYS
 
 ITEM_COLS = ["item_id", "dept_id", "cat_id"]
 STORE_COLS = ["store_id", "state_id"]
+
+ADI_CUTOFF = 1.32
+CV2_CUTOFF = 0.49
+ABC_A_SHARE = 0.80
+ABC_B_SHARE = 0.95
