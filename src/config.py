@@ -23,3 +23,11 @@ ADI_CUTOFF = 1.32
 CV2_CUTOFF = 0.49
 ABC_A_SHARE = 0.80
 ABC_B_SHARE = 0.95
+
+LEAD_TIME_DAYS = 7        # assumption B1
+N_ORIGINS = 8             # number of test cut-off dates
+ORIGIN_STEP = 28          # days between cut-off dates
+MIN_HISTORY = 56          # available days needed before a cut-off
+SAMPLE_PER_GROUP = 80     # series sampled per ABC x demand class
+SMOOTHING_ALPHA = 0.1     # starting value, not tuned
+TSB_BETA = 0.1            # starting value, not tuned
