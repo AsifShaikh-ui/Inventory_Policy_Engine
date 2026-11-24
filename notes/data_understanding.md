@@ -1,4 +1,10 @@
 # Data Understanding: M5 Forecasting (Walmart)
+
+Phase 2 notes for the Inventory Policy Engine.
+Source: Kaggle, "M5 Forecasting - Accuracy". Files are stored in `data/raw/` and are not committed to Git.
+
+Items marked **VERIFY** are filled from the M5 documentation and must be confirmed against the actual files before the case study uses them.
+
 ---
 
 ## 1. Files: which we use and why
@@ -11,6 +17,7 @@
 | `sales_train_validation.csv` | No | Same data as the evaluation file but stops at d_1913; using both would duplicate data |
 | `sample_submission.csv` | No | Kaggle submission format only; irrelevant to a business project |
 
+Note: the Kaggle goal (predict the next 28 days) is not our goal. We use the data to make inventory decisions.
 
 ## 2. Shapes (rows x columns)
 
@@ -71,7 +78,7 @@
   - `event_name_2` and `event_type_2`: 1964 nulls each (so only 5 days have a second event).
   - A null here means "no event that day". It is not missing data. Plan: fill with an explicit label later.
 - **sales_train_evaluation, sell_prices:** no nulls.
-- **No nulls does not mean no gaps.** `sell_prices` has a row only for weeks in which the item was priced at that store. A missing item/store/week row most likely means the item was not on sale in that store that week (for example, not yet launched). Measured: 19,558 of 30,490 item-store series (64.1%) have no price row in the first week of the data (wm_yr_wk 11101). VERIFY still open: compare an item's first price week with its first week of non-zero sales to confirm the two match.
+- **No nulls does not mean no gaps.** `sell_prices` has a row only for weeks in which the item was priced at that store. A missing item/store/week row most likely means the item was not on sale in that store that week (for example, not yet launched). Measured: 19,558 of 30,490 item-store series (64.1%) have no price row in the first week of the data (wm_yr_wk 11101). Confirmed: no series sold before its first price week (0 of 30,490), and every series has at least one sale.
 
 ## 6. Join chain
 
@@ -120,10 +127,33 @@ prices
   - Forecasting methods that assume a steady flow of demand fit this data poorly; intermittent-demand methods need to be considered.
   - Safety stock formulas that assume normally distributed demand may misbehave on zero-heavy demand, so the choice must be made deliberately and explained.
   - A forecast of "average daily sales" alone is not enough for an ordering decision, because the average hides how lumpy the demand is.
-- **The 68% is an average across all items.** The spread between items is not yet measured. Open check: compute the zero share per item and record the minimum, median, and maximum.
+- **Zero share on available days only: 59.60%** (27,942,406 zeros out of 46,881,677 available item-store-days). Of the 59,181,090 cells, 12,299,413 (20.8%) are days before the item's first price day; every one of them is zero. Removing them lowers the zero share from 68.00% to 59.60%, a drop of 8.4 percentage points. Demand stays strongly intermittent.
+- **The zero share differs a lot between series** (30,490 item-store series, share of available days with zero sales): minimum 0.2%, 10th percentile 25.9%, median 63.4%, 90th percentile 88.5%, maximum 99.1%. The average (about 60%) hides this spread, so one policy for all items is not appropriate; items need to be grouped by demand pattern.
 - **Many items start late.** Items without a price row in the first week of the data:
   - 19,558 of 30,490 item-store series (64.1%)
   - 2,718 of 3,049 items (89.1%) in at least one store
   - 1,592 of 3,049 items (52.2%) in all 10 stores, meaning they appear chain-wide only after the first week
   - So about 1,126 items (2,718 - 1,592) start at different times in different stores.
-- **Implication:** zeros before an item's first price week are not demand zeros; the item was most likely not on sale. These "not yet available" zeros must be separated from real zero-demand days before forecasting, or the 68% figure and any demand model will be distorted. Assumption to confirm: first price week matches first non-zero sale.
+- **Implication:** zeros before an item's first price week are not demand zeros; the item was most likely not on sale. These "not yet available" zeros must be separated from real zero-demand days before forecasting, or the 68% figure and any demand model will be distorted. Confirmed by `availability.py`: no series sold before its first price week.
+- **Price gaps after launch: none.** Across all available days of all 30,490 series, 0 days have no price row (checked in `classify.py`).
+
+## 9. Item classification (ABC by revenue, demand pattern)
+
+Computed on available days only, per item-store series, saved in `data/processed/item_classes.parquet`.
+
+- ABC by revenue (units x weekly selling price): A = first 80% of revenue, B = next 15%, C = last 5%. The 80/15/5 split is by construction. Series counts: A 11,221 (36.8%), B 9,426 (30.9%), C 9,843 (32.3%). Revenue is not spread in the classic "20% of items, 80% of revenue" way; A takes over a third of series.
+- Demand pattern from the average gap between sales (ADI, cut-off 1.32) and the squared variation of sale size (CV2, cut-off 0.49), the standard cut-offs from the intermittent-demand literature:
+  - intermittent 22,143 (72.6%)
+  - lumpy 5,612 (18.4%)
+  - smooth 1,880 (6.2%)
+  - erratic 855 (2.8%)
+- ABC x demand class (series count):
+
+| ABC | erratic | intermittent | lumpy | smooth |
+|---|---|---|---|---|
+| A | 788 | 6,475 | 2,210 | 1,748 |
+| B | 61 | 7,304 | 1,949 | 112 |
+| C | 6 | 8,364 | 1,453 | 20 |
+
+- Finding: about 91% of series are intermittent or lumpy, including most A series (6,475 + 2,210 of 11,221). Methods built for steady demand fit only about 6% of series.
+- Limitations: ABC uses revenue, not margin (no cost data). Classes are per item-store, not per item across the chain.
