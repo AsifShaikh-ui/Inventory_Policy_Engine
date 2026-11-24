@@ -160,9 +160,3 @@ The full pipeline processes about 59 million rows, one store at a time to keep m
 - ABC classes use revenue, not margin, and were computed over the full history.
 - Full results and caveats: `reports/case_study.md`
 
----
-
-## Author
-
-**Asif Iqbal Shaikh**
-GitHub: [AsifShaikh-ui](https://github.com/AsifShaikh-ui)
