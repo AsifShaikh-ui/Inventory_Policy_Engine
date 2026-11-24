@@ -35,3 +35,14 @@ TSB_BETA = 0.1            # starting value, not tuned
 MA_WINDOW = 28                                          # days in the moving average
 SERVICE_LEVELS = {"A": 0.98, "B": 0.95, "C": 0.90}      # proposed, see assumptions
 MIN_GROUP_ROWS = 500                                    # smaller groups use the ABC-level pool
+
+TEST_DAYS = 224          # last 224 days are the backtest period
+COGS_SHARE = 0.70        # B4: unit cost = 70% of selling price
+HOLDING_RATE = 0.20      # B3: yearly holding cost, share of unit cost
+ORDER_COST = 2.0         # B5: cost per order placed
+BASELINE_DAYS = [7, 14, 21, 30, 45]   # baseline: reorder at N days of average sales
+SERVICE_SETS = {
+    "low": {"A": 0.95, "B": 0.90, "C": 0.85},
+    "default": {"A": 0.98, "B": 0.95, "C": 0.90},
+    "high": {"A": 0.995, "B": 0.99, "C": 0.95},
+}

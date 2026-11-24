@@ -31,10 +31,11 @@ def forecasts_at(csum, start, d):
     return n_hist, forecast, level
 
 
-def build_safety_table(ev: pd.DataFrame) -> pd.DataFrame:
+def build_safety_table(ev: pd.DataFrame, levels=None) -> pd.DataFrame:
     """Safety stock as a share of weekly level, per ABC x demand class."""
+    levels = levels or config.SERVICE_LEVELS
     rows = []
-    for abc, q in config.SERVICE_LEVELS.items():
+    for abc, q in levels.items():
         pooled_ss = max(ev.loc[ev["abc"] == abc, "miss_ratio"].quantile(q), 0.0)
         for dc in sorted(ev["demand_class"].unique()):
             g = ev.loc[(ev["abc"] == abc) & (ev["demand_class"] == dc), "miss_ratio"]
