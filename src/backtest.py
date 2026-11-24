@@ -38,8 +38,8 @@ def fit_tables(avail, cls, t0):
     return {n: build_safety_table(ev, lv) for n, lv in config.SERVICE_SETS.items()}
 
 
-def simulate(y, start, price_day, F, L, rop_fn, t0):
-    """Replay the test days for every series of one store under one policy."""
+def simulate(y, start, price_day, F, L, rop_fn, t0, weeks_up_to, moq):
+    """Replay the test days for every series of one store under one policy and one order rule."""
     n = y.shape[0]
     T, lead = config.TEST_DAYS, config.LEAD_TIME_DAYS
     on_hand = np.zeros(n)
@@ -53,23 +53,25 @@ def simulate(y, start, price_day, F, L, rop_fn, t0):
         f, level = F[i], L[i]
         active = start <= t
         rop_raw = rop_fn(f, level)
-        rop = np.ceil(rop_raw)                 # whole units only
-        S = np.ceil(rop_raw + level)           # order up to: ROP + one normal week
+        rop = np.ceil(rop_raw)                          # whole units only
+        S = np.ceil(rop_raw + weeks_up_to * level)      # order-up-to level for this rule
+        S_start = np.ceil(rop_raw + level)              # same starting stock for every rule
 
-        new = active & ~started                # first day on the shelf: start full
-        on_hand[new] = S[new]
+        new = active & ~started                         # first day on the shelf
+        on_hand[new] = S_start[new]
         started |= new
 
-        on_hand += arrivals[:, i]              # deliveries
+        on_hand += arrivals[:, i]                       # deliveries
         on_order -= arrivals[:, i]
 
         demand = np.where(active, y[:, t - 1].astype(np.float64), 0.0)
-        sold = np.minimum(on_hand, demand)     # lost sales, no backorders
+        sold = np.minimum(on_hand, demand)              # lost sales, no backorders
         lost = demand - sold
         on_hand -= sold
 
         position = on_hand + on_order
         qty = np.where(active & (position <= rop), np.maximum(S - position, 0.0), 0.0)
+        qty = np.where(qty > 0, np.maximum(qty, moq), 0.0)   # minimum order size
         arrivals[:, i + lead] += qty
         on_order += qty
 
@@ -116,26 +118,44 @@ def run_store(store, avail, cls, tables, all_prices, weeks, day_week_code, t0):
         scenarios[f"ours_{name}"] = lambda f, lv, r=ratio[name]: f + r * lv
 
     out = []
-    for sname, fn in scenarios.items():
-        m = simulate(y, start, price_day, F, L, fn, t0)
-        df = pd.DataFrame(m)
-        df["store_id"], df["item_id"], df["scenario"] = store, items, sname
-        out.append(df)
+    for rule, (weeks_up_to, moq) in config.RULES.items():
+        for sname, fn in scenarios.items():
+            m = simulate(y, start, price_day, F, L, fn, t0, weeks_up_to, moq)
+            df = pd.DataFrame(m)
+            df["store_id"], df["item_id"] = store, items
+            df["rule"], df["scenario"] = rule, sname
+            out.append(df)
     return pd.concat(out, ignore_index=True)
 
 
 def summarize(df, order_cost=None):
     order_cost = config.ORDER_COST if order_cost is None else order_cost
-    g = df.groupby("scenario", sort=False)[COLS].sum()
+    g = df.groupby(["rule", "scenario"], sort=False)[COLS].sum()
     o = pd.DataFrame(index=g.index)
     o["fill_rate"] = g["sold"] / g["demand"]
-    o["avg_stock_units"] = g["inv_units"] / config.TEST_DAYS
-    o["avg_stock_value"] = g["inv_value"] / config.TEST_DAYS
+    o["stock_value"] = g["inv_value"] / config.TEST_DAYS
+    o["orders_per_series"] = g["orders"] / config.N_SERIES
     o["holding"] = g["inv_value"] * config.HOLDING_RATE / 365
     o["ordering"] = g["orders"] * order_cost
     o["lost_margin"] = g["lost_margin"]
     o["total_cost"] = o["holding"] + o["ordering"] + o["lost_margin"]
     return o
+
+
+def compare(res):
+    """Best baseline vs best ours, per order rule and per order cost."""
+    rows = []
+    for oc in [0, 2, 10]:
+        s = summarize(res, oc)["total_cost"].reset_index()
+        for rule, g in s.groupby("rule", sort=False):
+            base = g[g["scenario"].str.startswith("base")]["total_cost"].min()
+            ours = g[g["scenario"].str.startswith("ours")]["total_cost"].min()
+            rows.append({
+                "rule": rule, "order_cost": oc,
+                "best_baseline": base, "best_ours": ours,
+                "ours_lower_by": 1 - ours / base,
+            })
+    return pd.DataFrame(rows)
 
 
 def main() -> None:
@@ -167,19 +187,16 @@ def main() -> None:
 
     res = pd.concat(parts, ignore_index=True)
     res = res.merge(cls[["store_id", "item_id", "abc"]], on=["store_id", "item_id"], how="left")
-    res.to_parquet(config.PROCESSED_DIR / "backtest_series.parquet", index=False)
+    res.to_parquet(config.PROCESSED_DIR / "backtest_rules.parquet", index=False)
 
-    print(f"\nBacktest days: {t0} to {config.N_DAYS}  Series: {res['item_id'].size // len(res['scenario'].unique()):,}")
-    print("\nAll series (order cost = $%.1f):" % config.ORDER_COST)
-    print(summarize(res).round(3).to_string())
+    print(f"\nBacktest days: {t0} to {config.N_DAYS}")
+    table = summarize(res)
+    for rule in config.RULES:
+        print(f"\nRule: {rule}  (order cost = ${config.ORDER_COST})")
+        print(table.loc[rule][["fill_rate", "stock_value", "orders_per_series", "total_cost"]].round(3).to_string())
 
-    print("\nTotal cost under different order costs:")
-    print(pd.DataFrame({c: summarize(res, c)["total_cost"] for c in [0, 2, 10]}).round(0).to_string())
-
-    for abc in ["A", "B", "C"]:
-        sub = res[(res["abc"] == abc) & res["scenario"].isin(["base_30d", "ours_default"])]
-        print(f"\nClass {abc}:")
-        print(summarize(sub)[["fill_rate", "avg_stock_value", "total_cost"]].round(3).to_string())
+    print("\nBest baseline vs best ours (total cost):")
+    print(compare(res).round(3).to_string(index=False))
 
 
 if __name__ == "__main__":

@@ -98,3 +98,18 @@ Each entry records what was decided, why, and what was given up. Interviewers of
   - One 224-day window, one lead time, one order rule, no promotions.
   - The ABC and demand classes were computed on all history, a mild leak. Forecasts and buffer ratios use only past data.
 - **Bug found and fixed:** the first run showed identical results for the three service-level sets because `build_safety_table` ignored the levels it was given. The rerun gives different results, as it should.
+
+## D15. Order-rule sensitivity: does the result survive realistic ordering?
+- **Test:** the same backtest (D14) repeated under four order rules, with baselines at 14, 21, 30 and 45 days (7 days dropped, clearly poor). Rules: `current` (order up to the reorder point plus 1 normal week), `batch4` (plus 4 weeks), `batch8` (plus 8 weeks), `batch4_moq6` (plus 4 weeks, at least 6 units per order). Everything else unchanged, including the buffer ratios fitted before the test period.
+- **Check passed:** under `current`, results reproduce D14 exactly (for example ours-default: fill 0.989, stock 1,294,648, total cost 1,891,765).
+- **Orders per series in 224 days:** about 27 (`current`), 8.2 to 8.6 (`batch4`), 4.5 to 4.7 (`batch8`), 7.7 to 7.9 (`batch4_moq6`). Ordering stays the largest cost under `current` (about 85%) but falls to about 61% under `batch4` and about 39% under `batch8` at $2 per order.
+- **Best baseline vs best ours, total cost, ours lower by:**
+  - Order cost $0: current 29.0%, batch4 23.4%, batch8 16.7%, batch4_moq6 23.1%
+  - Order cost $2: current 8.5%, batch4 10.3%, batch8 10.6%, batch4_moq6 10.3%
+  - Order cost $10: current 4.5%, batch4 3.2%, batch8 3.6%, batch4_moq6 3.0%
+- **At $2 per order, best baseline (21-day) vs best ours:** fill rate 0.983 vs 0.989 (current), 0.987 vs 0.993 (batch4), 0.992 vs 0.993 (batch8), 0.988 vs 0.993 (batch4_moq6). Stock value lower under ours by 21%, 14%, 16% and 14% respectively.
+- **Conclusion:** under all four order rules and all three order costs tested, ours had lower total cost than the best baseline (3.0% to 29.0% lower), with equal or higher fill rate and 14% to 21% less stock in the $2 comparisons. The advantage is smallest when ordering is expensive.
+- **Caveats:**
+  - "Best" is chosen after the fact within each side (4 baselines, 3 service-level sets for ours), which slightly favours both and does not remove the gap.
+  - Hypothetical results under assumed costs (B3 to B8), one 224-day window, one lead time, no promotions, daily review of every item.
+  - Larger batches raise stock for every policy; compare policies within a rule, not across rules.

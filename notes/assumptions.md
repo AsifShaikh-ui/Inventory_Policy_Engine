@@ -46,4 +46,4 @@ All values here are **Proposed** and will be varied in a sensitivity analysis, n
 - Price gaps after launch: checked in `classify.py`. 0 available item-store-days lack a price row, so no gaps after the first price week.
 - Decide B5 (ordering cost) and review B1 to B4 before the backtest is written.
 - Rounding rule decided: reorder points are rounded up to whole units in the backtest.
-- The order rule (B8) creates about 27 orders per series in 224 days, which makes ordering the largest cost. Test a weekly review with a larger order size before relying on the cost result.
+- The order rule (B8) creates about 27 orders per series in 224 days. Tested larger batches (4 and 8 weeks, minimum order 6 units) in decision D15; the conclusion held. Weekly review was not tested because it would change the protection period the buffers were fitted for.
