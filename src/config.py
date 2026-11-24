@@ -31,3 +31,7 @@ MIN_HISTORY = 56          # available days needed before a cut-off
 SAMPLE_PER_GROUP = 80     # series sampled per ABC x demand class
 SMOOTHING_ALPHA = 0.1     # starting value, not tuned
 TSB_BETA = 0.1            # starting value, not tuned
+
+MA_WINDOW = 28                                          # days in the moving average
+SERVICE_LEVELS = {"A": 0.98, "B": 0.95, "C": 0.90}      # proposed, see assumptions
+MIN_GROUP_ROWS = 500                                    # smaller groups use the ABC-level pool
