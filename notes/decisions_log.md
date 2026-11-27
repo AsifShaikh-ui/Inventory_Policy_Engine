@@ -126,6 +126,7 @@ Each entry records what was decided, why, and what was given up. Interviewers of
   - Late starts by category: HOBBIES 67.2%, HOUSEHOLD 65.3%, FOODS 62.1% of series (19,558 in total, as in Python).
   - About 68% of revenue is in intermittent or lumpy series; class A intermittent series hold 35.8% of all revenue.
   - At $2 per order, all three of our policy variants rank above all four baselines under every order rule.
-- **Open items:**
-  - Revenue per day rose from about 72,800 (January 2011) to about 143,300 (May 2016), with year-on-year growth of 10 to 38% in early years. Part of this may be products joining the assortment, since 64% of series start late. Not yet checked: count the series on sale each month.
-  - Share of series with a reorder point below 1 unit (query Q9): result not yet recorded.
+- **Results of the two open checks:**
+  - Reorder points below 1 unit (Q9): class A 0.0%, B 0.1%, C 4.3%, about 430 of 30,490 series (1.4%) before rounding. Below 2 units: 0.0%, 1.8%, 18.1%. The backtest rounds reorder points up to whole units, so this is a small issue. Total safety stock 350,515 units against a 7-day forecast of 307,941 units, matching the policy output.
+  - Series on sale (Q10): 10,932 at the end of January 2011, 16,762 in December 2011, 21,894 in December 2012, 25,939 in December 2013, 29,584 in December 2014, about 30,460 by late 2015. Between January 2012 and January 2016, revenue per day rose about 61% (76,602 to 123,145) while the number of series on sale rose about 77% (17,230 to about 30,470). The growth in total revenue per day is therefore explained by more products on sale; revenue per series on sale did not rise. This is consistent with a trend-free average being adequate as a forecast, but prices and product mix were not separated out.
+- **New limitation found:** ABC uses total revenue over each series' available days, so a series that launched late ranks lower than its sales rate would justify. Revenue per available day would be fairer. Not fixed; stated as a limitation.

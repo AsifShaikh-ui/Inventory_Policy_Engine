@@ -188,5 +188,5 @@ The full pipeline processes about 59 million rows, one store at a time to keep m
 - Holding cost (20% a year), unit cost (70% of price), order cost ($2), lost margin (30% of price) and the 7-day delivery time are assumptions. All are listed in `notes/assumptions.md`.
 - Observed sales stand in for demand. Stockouts can hide true demand, and the data cannot show them.
 - One 224-day test window, one delivery time, no promotions, and daily review of every item.
-- ABC classes use revenue, not margin, and were computed over the full history.
+- ABC classes use total revenue (not margin) over each series' available days and were computed over the full history, so late launches rank lower than their sales rate justifies.
 - Full results and caveats: `reports/case_study.md`

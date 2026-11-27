@@ -65,6 +65,8 @@ A retailer that reorders every product at "N days of average sales" holds more s
 
 **Order-rule sensitivity.** The same test under four ordering rules (order up to the reorder point plus 1, 4 or 8 weeks of demand, and 4 weeks with a minimum of 6 units) and three order costs ($0, $2, $10).
 
+**SQL.** Data checks and nine business questions written in SQL (DuckDB) over the same Parquet files, using joins, CTEs, window functions (RANK, LAG, running totals) and ROLLUP. The SQL checks reproduce the Python results: 59,181,090 rows, 59.60% zero share on available days, and the ABC class counts.
+
 **Application.** A Streamlit app shows the reorder point for any item and the service-versus-stock trade-off for any order rule and order cost.
 
 ## 4. What did we discover, and what is the business impact?
@@ -74,6 +76,9 @@ A retailer that reorders every product at "N days of average sales" holds more s
 - Demand is intermittent: even on days the item is on sale, 59.6% have no sale, and 91% of series are intermittent or lumpy.
 - The 68% headline zero share overstates real zero demand by 8.4 points, because it counts days before products existed in the store.
 - Only about 6% of series have smooth demand, so methods that assume steady demand fit a small part of the range.
+- Most of the revenue sits in hard-to-forecast series: about 68% of revenue is in intermittent or lumpy series (class A intermittent series alone hold 35.8%). Smooth class A series hold 24.0% of revenue from 5.7% of series.
+- Zero share on available days differs by department: highest in HOBBIES_2 (84.8%) and HOUSEHOLD_2 (76.8%), lowest in FOODS_3 (47.3%).
+- Revenue growth is mostly assortment growth. Between January 2012 and January 2016, revenue per day rose about 61% while the number of series on sale rose about 77%, so revenue per series on sale did not rise. Prices and product mix were not separated out.
 
 ### Backtest results (hypothetical, under the assumptions above)
 
@@ -103,7 +108,7 @@ Best baseline against best of our policies, total cost, ours lower by:
 | $2 | 8.5% | 10.3% | 10.6% | 10.3% |
 | $10 | 4.5% | 3.2% | 3.6% | 3.0% |
 
-At $2 per order, the best of our policies has equal or higher fill rate than the best baseline under every order rule, and holds 14% to 21% less stock.
+At $2 per order, the best of our policies has equal or higher fill rate than the best baseline under every order rule, and holds 14% to 21% less stock. In a SQL cross-check, all three of our service-level variants cost less than every baseline at $2 per order under all four order rules, so the result does not depend on choosing the best variant after the fact.
 
 ### Not claimed
 
@@ -127,11 +132,11 @@ Run both policies on matched groups of products for several weeks. Compare fill 
 - Costs and the 7-day delivery time are assumptions, not data. Results change with them, which is why order cost was varied.
 - Observed sales stand in for demand. Stockouts can hide true demand.
 - One 224-day test window, one delivery time, no promotions, daily review of every item.
-- The best baseline and the best of our policies were each chosen after the fact (4 and 3 options), which slightly favours both sides.
+- The best baseline and the best of our policies were each chosen after the fact (4 and 3 options), which slightly favours both sides. At $2 per order this matters little, since every one of our variants cost less than every baseline.
 - Forecast comparison used a sample of 807 series, and smoothing parameters were not tuned.
 - Buffer ratios for 87 series in sparse classes use a pooled value dominated by intermittent items and are probably too large.
-- ABC classes use revenue, not margin, and were computed over the full history, a mild leak into the test.
-- A very slow product can have a fractional reorder point. The backtest rounds up to whole units.
+- ABC classes use total revenue (not margin) over each series' available days and were computed over the full history, a mild leak into the test. A series that launched late ranks lower than its sales rate would justify; revenue per available day would be fairer.
+- About 1.4% of series (mostly class C) have a reorder point below 1 unit before rounding. The backtest rounds up to whole units.
 
 ## Interview summary
 
