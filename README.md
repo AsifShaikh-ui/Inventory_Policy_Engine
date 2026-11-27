@@ -41,6 +41,25 @@ A store manager has to decide, for every product, when to reorder and how much b
 
 ---
 
+## Figures
+
+**Revenue growth follows the number of products on sale**
+![Assortment growth](reports/figures/fig_assortment_growth.png)
+
+**Zero-sales share differs widely between series**
+![Zero share spread](reports/figures/fig_zero_share_spread.png)
+
+**Where the series and the revenue sit, by demand pattern**
+![Demand class and revenue](reports/figures/fig_demand_class_revenue.png)
+
+**Revenue concentration across series**
+![ABC curve](reports/figures/fig_abc_pareto.png)
+
+**Fill rate against stock held: ours vs baselines, by order rule**
+![Policy trade-off](reports/figures/fig_policy_tradeoff.png)
+
+---
+
 ## App Features
 
 - Item view: pick a store and item to see its class, 7-day forecast, safety stock and reorder point
@@ -136,6 +155,8 @@ Inventory_Policy_Engine/
 ├── tests/
 │   ├── test_policy.py       # forecast and safety stock math
 │   └── test_backtest.py     # replay simulation
+├── notebooks/
+│   └── 01_eda.ipynb         # builds the five figures
 ├── notes/                   # data understanding, assumptions, decisions log, code walkthrough
 ├── reports/
 │   ├── case_study.md        # full write-up with results and caveats
@@ -150,7 +171,7 @@ Inventory_Policy_Engine/
 ## How to Run
 
 1. Install [uv](https://docs.astral.sh/uv/) and run `uv sync`
-2. Download the three data files from Kaggle and place them in `data/raw/`
+2. Download the three data files from Kaggle and place them in `data/raw/` (create the folder first)
 3. Run the pipeline from the project root, in order:
    ```
    uv run python src/ingest.py

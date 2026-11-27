@@ -80,6 +80,14 @@ A retailer that reorders every product at "N days of average sales" holds more s
 - Zero share on available days differs by department: highest in HOBBIES_2 (84.8%) and HOUSEHOLD_2 (76.8%), lowest in FOODS_3 (47.3%).
 - Revenue growth is mostly assortment growth. Between January 2012 and January 2016, revenue per day rose about 61% while the number of series on sale rose about 77%, so revenue per series on sale did not rise. Prices and product mix were not separated out.
 
+![Revenue growth follows the number of products on sale](figures/fig_assortment_growth.png)
+
+![Zero-sales share differs widely between series](figures/fig_zero_share_spread.png)
+
+![Where the series and the revenue sit, by demand pattern](figures/fig_demand_class_revenue.png)
+
+![Revenue concentration across series](figures/fig_abc_pareto.png)
+
 ### Backtest results (hypothetical, under the assumptions above)
 
 All series, order rule "up to reorder point + 1 week", $2 per order:
@@ -109,6 +117,8 @@ Best baseline against best of our policies, total cost, ours lower by:
 | $10 | 4.5% | 3.2% | 3.6% | 3.0% |
 
 At $2 per order, the best of our policies has equal or higher fill rate than the best baseline under every order rule, and holds 14% to 21% less stock. In a SQL cross-check, all three of our service-level variants cost less than every baseline at $2 per order under all four order rules, so the result does not depend on choosing the best variant after the fact.
+
+![Fill rate against stock held, by order rule](figures/fig_policy_tradeoff.png)
 
 ### Not claimed
 
