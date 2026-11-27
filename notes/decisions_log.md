@@ -113,3 +113,19 @@ Each entry records what was decided, why, and what was given up. Interviewers of
   - "Best" is chosen after the fact within each side (4 baselines, 3 service-level sets for ours), which slightly favours both and does not remove the gap.
   - Hypothetical results under assumed costs (B3 to B8), one 224-day window, one lead time, no promotions, daily review of every item.
   - Larger batches raise stock for every policy; compare policies within a rule, not across rules.
+
+## D16. SQL layer with DuckDB
+- **Decision:** add SQL over the existing Parquet files using DuckDB, not a PostgreSQL load.
+- **Why:** SQL is a target skill and the project had none. DuckDB runs standard SQL on Parquet with no server and no load of 59 million rows. PostgreSQL would show the same SQL skills at a much higher setup cost.
+- **Files:** `sql/01_views.sql` (views, including the join chain sales to calendar to prices), `sql/02_checks.sql` (seven checks), `sql/03_analysis.sql` (nine business questions), `src/run_sql.py` (runner).
+- **Checks:** all matched the Python pipeline (59,181,090 rows, no null keys or negatives, one row per item-day, 30,490 series in every table, no sales before first price, zero share 68.00% and 59.60%).
+- **Findings from the analysis queries:**
+  - Category split of revenue is FOODS 56 to 62%, HOUSEHOLD 27 to 31%, HOBBIES 11 to 13% in each state.
+  - ABC classes reproduce the Python result exactly (11,221 / 9,426 / 9,843 series; 80 / 15 / 5% of revenue).
+  - Zero share on available days by department: HOBBIES_2 84.8%, HOUSEHOLD_2 76.8%, HOBBIES_1 67.1%, FOODS_1 56.8%, FOODS_2 55.8%, HOUSEHOLD_1 51.8%, FOODS_3 47.3%; overall 59.6%.
+  - Late starts by category: HOBBIES 67.2%, HOUSEHOLD 65.3%, FOODS 62.1% of series (19,558 in total, as in Python).
+  - About 68% of revenue is in intermittent or lumpy series; class A intermittent series hold 35.8% of all revenue.
+  - At $2 per order, all three of our policy variants rank above all four baselines under every order rule.
+- **Open items:**
+  - Revenue per day rose from about 72,800 (January 2011) to about 143,300 (May 2016), with year-on-year growth of 10 to 38% in early years. Part of this may be products joining the assortment, since 64% of series start late. Not yet checked: count the series on sale each month.
+  - Share of series with a reorder point below 1 unit (query Q9): result not yet recorded.

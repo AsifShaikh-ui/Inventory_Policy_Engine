@@ -31,10 +31,12 @@ A store manager has to decide, for every product, when to reorder and how much b
 | Zero-sales share | **68.00%** of all item-store-days; **59.60%** on days the item was on sale |
 | Late-starting series | **64.1%** (19,558 of 30,490) have no price in week 1; none sold before its first price |
 | Demand pattern | **91%** of series are intermittent or lumpy; only 6.2% are smooth |
+| Where the revenue sits | About **68%** of revenue is in intermittent or lumpy series (SQL analysis) |
 | Forecast method | 28-day average (error 0.340) matched TSB (0.342) and beat the 90-day average (0.371) and SBA (0.380) |
 | Same stock, better service | At about $1.05M of stock, fill rate **98.0%** (ours) vs **95.6%** (14-day rule) |
 | Against the 30-day rule | **46% less stock**, 0.3 points lower fill rate, 9.6% lower total cost at $2 per order |
 | Robustness | Ours cost **3.0% to 29.0% less** than the best baseline in all 12 combinations of 4 order rules and 3 order costs |
+| At $2 per order | All three of our service-level variants cost less than every baseline under all four order rules |
 | Weakest result | The cost advantage shrinks to 3.0% to 4.5% when each order costs $10 |
 
 ---
@@ -55,6 +57,7 @@ A store manager has to decide, for every product, when to reorder and how much b
 |---|---|
 | Python (pandas, NumPy) | Pipeline, forecasting, policy and backtest simulation |
 | Parquet (PyArrow) | Compact storage of 59M-row tables |
+| DuckDB, SQL | Data checks and business queries run directly on the Parquet files |
 | Streamlit, Plotly | Interactive app |
 | uv | Reproducible environment |
 | Git, GitHub | Version control |
@@ -74,6 +77,20 @@ A store manager has to decide, for every product, when to reorder and how much b
 | 7 | `policy.py` | Safety stock and reorder point for every series |
 | 8 | `backtest.py` | Replays the last 224 days under each policy, order rule and order cost |
 | 9 | `build_app_data.py` | Builds the small files the app reads |
+
+---
+
+## SQL Layer
+
+DuckDB runs standard SQL directly on the Parquet files, so no database server is needed.
+
+| File | What it does |
+|---|---|
+| `sql/01_views.sql` | One view per table, including the sales, calendar, prices join chain |
+| `sql/02_checks.sql` | Data checks: row count, null keys, one row per item-day, series counts, sales before first price, zero share |
+| `sql/03_analysis.sql` | Business questions using joins, CTEs, window functions (RANK, LAG, running totals) and ROLLUP |
+
+The SQL checks reproduce the Python results (59,181,090 rows, 59.60% zero share on available days, ABC class counts).
 
 ---
 
@@ -108,9 +125,17 @@ Inventory_Policy_Engine/
 │   ├── forecast.py          # forecast method comparison
 │   ├── policy.py            # safety stock and reorder points
 │   ├── backtest.py          # policy replay and cost comparison
-│   └── build_app_data.py    # app data
+│   ├── build_app_data.py    # app data
+│   └── run_sql.py           # runs the SQL files
+├── sql/
+│   ├── 01_views.sql         # views over the Parquet files, incl. the join chain
+│   ├── 02_checks.sql        # data checks in SQL
+│   └── 03_analysis.sql      # business questions: joins, CTEs, window functions
 ├── app/
 │   └── streamlit_app.py     # interactive app
+├── tests/
+│   ├── test_policy.py       # forecast and safety stock math
+│   └── test_backtest.py     # replay simulation
 ├── notes/                   # data understanding, assumptions, decisions log, code walkthrough
 ├── reports/
 │   ├── case_study.md        # full write-up with results and caveats
@@ -138,6 +163,12 @@ Inventory_Policy_Engine/
    uv run python src/build_app_data.py
    ```
 4. Start the app: `uv run streamlit run app/streamlit_app.py`
+5. Optional, SQL checks and analysis (DuckDB):
+   ```
+   uv run python src/run_sql.py sql/02_checks.sql
+   uv run python src/run_sql.py sql/03_analysis.sql
+   ```
+6. Optional, tests: `uv run pytest -q`
 
 The full pipeline processes about 59 million rows, one store at a time to keep memory use low.
 
@@ -159,4 +190,3 @@ The full pipeline processes about 59 million rows, one store at a time to keep m
 - One 224-day test window, one delivery time, no promotions, and daily review of every item.
 - ABC classes use revenue, not margin, and were computed over the full history.
 - Full results and caveats: `reports/case_study.md`
-
